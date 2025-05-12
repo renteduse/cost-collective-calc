@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { currencyApi } from '@/services/apiService';
 
 export interface Settlement {
   from: {
@@ -16,12 +17,14 @@ export interface Settlement {
     name: string;
     email: string;
     avatar?: string;
+    preferredCurrency?: string;
   };
   to: {
     id: string;
     name: string;
     email: string;
     avatar?: string;
+    preferredCurrency?: string;
   };
   amount: number;
   currency: string;
@@ -35,6 +38,7 @@ interface SettlementPlanProps {
 
 const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading, groupId }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   const getInitials = (name: string) => {
     return name
@@ -69,6 +73,8 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading,
       toast('Reminder sent successfully', {
         description: 'The user has been notified about the payment.'
       });
+      // Invalidate reminders query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['reminders'] });
     },
     onError: () => {
       toast('Failed to send reminder', {
@@ -78,7 +84,7 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading,
   });
 
   const sendReminder = (settlement: Settlement) => {
-    // Only allow the receiver to send reminders
+    // Only allow the receiver (creditor) to send reminders
     if (user?.id === settlement.to.id && groupId) {
       sendReminderMutation.mutate({
         groupId,
@@ -86,6 +92,20 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading,
         amount: settlement.amount,
         currency: settlement.currency
       });
+    }
+  };
+
+  // Help function to display amounts in preferred currency
+  const displayAmount = async (amount: number, fromCurrency: string, toCurrency: string) => {
+    if (fromCurrency === toCurrency) {
+      return `${toCurrency} ${amount.toFixed(2)}`;
+    }
+    
+    try {
+      const convertedAmount = await currencyApi.convertCurrency(amount, fromCurrency, toCurrency);
+      return `${toCurrency} ${convertedAmount.toFixed(2)} (${fromCurrency} ${amount.toFixed(2)})`;
+    } catch (error) {
+      return `${fromCurrency} ${amount.toFixed(2)}`;
     }
   };
 

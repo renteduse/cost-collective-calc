@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from '@/components/ui/sonner';
 
 interface User {
   id: string;
@@ -20,6 +21,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUserInfo: (updatedUser: Partial<User>) => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -115,6 +117,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add the updateProfile function to fix the ProfilePage error
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      setLoading(true);
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_URL || '/api'}/auth/profile`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      setUser({ ...user, ...response.data });
+      toast('Profile updated successfully');
+      return response.data;
+    } catch (err: any) {
+      toast('Failed to update profile', {
+        description: err.response?.data?.message || 'An error occurred',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -126,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         updateUserInfo,
+        updateProfile,
       }}
     >
       {children}

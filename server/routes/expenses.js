@@ -1,6 +1,7 @@
 
 const express = require('express');
 const { body, validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken'); // Add JWT import
 const auth = require('../middleware/auth');
 const Expense = require('../models/Expense');
 const Group = require('../models/Group');
@@ -270,19 +271,28 @@ router.get('/group/:groupId/export', async (req, res) => {
     
     if (token) {
       try {
-        const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_jwt_secret');
         userId = decoded.id;
       } catch (err) {
-        // If token verification fails, still allow the download
-        console.log('Export auth token invalid, but proceeding anyway');
+        // If token verification fails, return authentication error
+        return res.status(401).json({ message: 'Authentication required' });
       }
+    } else {
+      return res.status(401).json({ message: 'Authentication required' });
     }
     
-    // Verify group exists
+    // Verify group exists and user is a member
     const group = await Group.findById(groupId);
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
+    }
+    
+    const isMember = group.members.some(
+      member => member.user.toString() === userId
+    );
+    
+    if (!isMember) {
+      return res.status(403).json({ message: 'Not authorized to export expenses for this group' });
     }
     
     // Get all expenses for this group
@@ -320,12 +330,9 @@ router.get('/group/:groupId/export', async (req, res) => {
         .map(p => `${p.user.name} (${p.share})`)
         .join('; ');
       
-      // Format date properly
-      const formattedDate = new Date(expense.date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      // Format date properly - ISO format with date only
+      const dateObj = new Date(expense.date);
+      const formattedDate = dateObj.toISOString().split('T')[0];
       
       csvRows.push([
         formattedDate,

@@ -13,6 +13,7 @@ interface BalanceItem {
     name: string;
     email: string;
     avatar?: string;
+    preferredCurrency?: string;
   };
   paid: number;
   owes: number;
@@ -55,8 +56,14 @@ const BalanceSummary: React.FC<BalanceSummaryProps> = ({ balances, isLoading, cu
   const chartData = balances.map(balance => ({
     name: balance.user.name,
     balance: balance.netBalance,
-    color: balance.netBalance >= 0 ? '#22c55e' : '#ef4444'
+    color: balance.netBalance >= 0 ? '#22c55e' : '#ef4444',
+    preferredCurrency: balance.user.preferredCurrency || currency
   }));
+
+  // Format currency display
+  const formatCurrency = (value: number, currencyCode: string) => {
+    return `${currencyCode} ${Math.abs(value).toFixed(2)}`;
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -86,7 +93,10 @@ const BalanceSummary: React.FC<BalanceSummaryProps> = ({ balances, isLoading, cu
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
-                  formatter={(value) => [`${currency} ${value}`, 'Balance']}
+                  formatter={(value, name, item) => [
+                    `${currency} ${Math.abs(Number(value)).toFixed(2)}`, 
+                    'Balance'
+                  ]}
                   labelFormatter={(name) => `${name}`}
                 />
                 <Bar dataKey="balance" radius={[4, 4, 0, 0]}>
@@ -104,9 +114,10 @@ const BalanceSummary: React.FC<BalanceSummaryProps> = ({ balances, isLoading, cu
         {balances.map(balance => {
           const isCurrentUser = balance.user.id === user?.id;
           const balancePositive = balance.netBalance > 0;
+          const displayCurrency = currency;
 
           return (
-            <Card key={balance.user.id} className={`border-l-4 ${balancePositive ? 'border-l-positive' : 'border-l-negative'}`}>
+            <Card key={balance.user.id} className={`border-l-4 ${balancePositive ? 'border-l-green-500' : 'border-l-red-500'}`}>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
                   <Avatar>
@@ -118,25 +129,30 @@ const BalanceSummary: React.FC<BalanceSummaryProps> = ({ balances, isLoading, cu
                     <div className="mt-2">
                       <div className="flex justify-between text-sm mb-1">
                         <span>Total paid</span>
-                        <span className="font-medium">{currency} {balance.paid.toFixed(2)}</span>
+                        <span className="font-medium">{displayCurrency} {balance.paid.toFixed(2)}</span>
                       </div>
                       <Progress value={(balance.paid / (Math.max(balance.paid, balance.owes) || 1)) * 100} className="h-1 bg-muted" />
                     </div>
                     <div className="mt-2">
                       <div className="flex justify-between text-sm mb-1">
                         <span>Total owed</span>
-                        <span className="font-medium">{currency} {balance.owes.toFixed(2)}</span>
+                        <span className="font-medium">{displayCurrency} {balance.owes.toFixed(2)}</span>
                       </div>
                       <Progress value={(balance.owes / (Math.max(balance.paid, balance.owes) || 1)) * 100} className="h-1 bg-muted" />
                     </div>
                   </div>
                 </div>
-                <div className={`mt-3 text-right font-semibold ${balancePositive ? 'text-positive' : 'text-negative'}`}>
+                <div className={`mt-3 text-right font-semibold ${balancePositive ? 'text-green-600' : 'text-red-600'}`}>
                   {balancePositive
-                    ? `Is owed ${currency} ${Math.abs(balance.netBalance).toFixed(2)}`
-                    : `Owes others ${currency} ${Math.abs(balance.netBalance).toFixed(2)}`
+                    ? `Is owed ${displayCurrency} ${Math.abs(balance.netBalance).toFixed(2)}`
+                    : `Owes others ${displayCurrency} ${Math.abs(balance.netBalance).toFixed(2)}`
                   }
                 </div>
+                {balance.user.preferredCurrency && balance.user.preferredCurrency !== currency && (
+                  <div className="mt-2 text-xs text-gray-500 text-right">
+                    User's preferred currency: {balance.user.preferredCurrency}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );

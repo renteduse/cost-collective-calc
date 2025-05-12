@@ -36,6 +36,7 @@ router.get('/group/:groupId', auth, async (req, res) => {
     // Calculate balances
     const balances = {};
     const defaultCurrency = group.defaultCurrency || 'USD';
+    const rates = getExchangeRates(); // Get the latest exchange rates
     
     // Process each expense
     expenses.forEach(expense => {
@@ -120,21 +121,24 @@ router.get('/group/:groupId', auth, async (req, res) => {
       
       if (amountToSettle > 0.01) { // Only create settlement if amount is significant
         // Get user details for the settlement
-        const debtorUser = await User.findById(debtor.id, 'name email avatar');
-        const creditorUser = await User.findById(creditor.id, 'name email avatar');
+        const debtorUser = await User.findById(debtor.id, 'name email avatar preferredCurrency');
+        const creditorUser = await User.findById(creditor.id, 'name email avatar preferredCurrency');
         
+        // Add user's preferred currency to the settlement data
         settlements.push({
           from: {
             id: debtor.id,
             name: debtorUser.name,
             email: debtorUser.email,
-            avatar: debtorUser.avatar
+            avatar: debtorUser.avatar,
+            preferredCurrency: debtorUser.preferredCurrency || defaultCurrency
           },
           to: {
             id: creditor.id,
             name: creditorUser.name,
             email: creditorUser.email,
-            avatar: creditorUser.avatar
+            avatar: creditorUser.avatar,
+            preferredCurrency: creditorUser.preferredCurrency || defaultCurrency
           },
           amount: parseFloat(amountToSettle.toFixed(2)),
           currency: defaultCurrency
