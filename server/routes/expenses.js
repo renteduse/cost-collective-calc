@@ -320,8 +320,15 @@ router.get('/group/:groupId/export', async (req, res) => {
         .map(p => `${p.user.name} (${p.share})`)
         .join('; ');
       
+      // Format date properly
+      const formattedDate = new Date(expense.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      
       csvRows.push([
-        new Date(expense.date).toISOString().split('T')[0],
+        formattedDate,
         `"${expense.description.replace(/"/g, '""')}"`,
         expense.amount,
         expense.currency,

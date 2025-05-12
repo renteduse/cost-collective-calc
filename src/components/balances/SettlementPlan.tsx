@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
+import { useMutation } from '@tanstack/react-query';
+import axios from 'axios';
 
 export interface Settlement {
   from: {
@@ -28,9 +30,10 @@ export interface Settlement {
 interface SettlementPlanProps {
   settlements: Settlement[];
   isLoading: boolean;
+  groupId?: string;
 }
 
-const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading }) => {
+const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading, groupId }) => {
   const { user } = useAuth();
   
   const getInitials = (name: string) => {
@@ -52,11 +55,36 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading 
       .catch(() => toast('Failed to copy'));
   };
 
+  // Send reminder mutation
+  const sendReminderMutation = useMutation({
+    mutationFn: (data: { groupId: string; toUserId: string; amount: number; currency: string }) => {
+      return axios.post(`${import.meta.env.VITE_API_URL || '/api'}/settlements/remind`, data, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+    },
+    onSuccess: () => {
+      toast('Reminder sent successfully', {
+        description: 'The user has been notified about the payment.'
+      });
+    },
+    onError: () => {
+      toast('Failed to send reminder', {
+        description: 'Please try again later.',
+      });
+    }
+  });
+
   const sendReminder = (settlement: Settlement) => {
     // Only allow the receiver to send reminders
-    if (user?.id === settlement.to.id) {
-      toast(`Reminder sent to ${settlement.from.name}`, {
-        description: `For payment of ${settlement.currency} ${settlement.amount.toFixed(2)}`
+    if (user?.id === settlement.to.id && groupId) {
+      sendReminderMutation.mutate({
+        groupId,
+        toUserId: settlement.from.id,
+        amount: settlement.amount,
+        currency: settlement.currency
       });
     }
   };
@@ -127,9 +155,19 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading 
                     <div className="font-bold text-right">
                       {settlement.currency} {settlement.amount.toFixed(2)}
                     </div>
-                    {userIsReceiver && !userIsPayer && (
-                      <Button variant="outline" size="sm" onClick={() => sendReminder(settlement)}>
-                        Send Reminder
+                    {userIsReceiver && !userIsPayer && groupId && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => sendReminder(settlement)} 
+                        disabled={sendReminderMutation.isPending}
+                      >
+                        {sendReminderMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : 'Send Reminder'}
                       </Button>
                     )}
                   </div>

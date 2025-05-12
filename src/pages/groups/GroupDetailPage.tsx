@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -234,6 +233,7 @@ const GroupDetailPage: React.FC = () => {
               <SettlementPlan 
                 settlements={settlements} 
                 isLoading={isLoadingSettlements}
+                groupId={groupId}
               />
             </TabsContent>
             

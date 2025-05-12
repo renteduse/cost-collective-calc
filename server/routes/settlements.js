@@ -5,7 +5,7 @@ const Group = require('../models/Group');
 const Expense = require('../models/Expense');
 const User = require('../models/User');
 const Settlement = require('../models/Settlement');
-const { convertCurrency } = require('../utils/currencyConverter');
+const { convertCurrency, getExchangeRates } = require('../utils/currencyConverter');
 
 const router = express.Router();
 
@@ -217,6 +217,37 @@ router.post('/settle', auth, async (req, res) => {
     res.json({ message: 'Settlement marked as completed' });
   } catch (error) {
     console.error('Error updating settlement:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get reminders for a user
+router.get('/reminders', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get all reminders where the user is the debtor
+    const reminders = await Settlement.find({ 
+      from: userId,
+      settled: false
+    })
+    .populate('group', 'name')
+    .populate('to', 'name email avatar')
+    .sort({ createdAt: -1 });
+    
+    // Group reminders by date to only show one per day
+    const groupedReminders = {};
+    
+    reminders.forEach(reminder => {
+      const date = new Date(reminder.createdAt).toDateString();
+      if (!groupedReminders[date]) {
+        groupedReminders[date] = reminder;
+      }
+    });
+    
+    res.json(Object.values(groupedReminders));
+  } catch (error) {
+    console.error('Error fetching reminders:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -17,6 +17,7 @@ interface BalanceItem {
   paid: number;
   owes: number;
   netBalance: number;
+  originalCurrency?: string;
 }
 
 interface BalanceSummaryProps {
@@ -64,6 +65,7 @@ const BalanceSummary: React.FC<BalanceSummaryProps> = ({ balances, isLoading, cu
           <CardTitle>Group Balance Summary</CardTitle>
           <CardDescription>
             Overview of who's owed money and who owes others in the group
+            {currency && <span className="font-medium ml-1">(All values shown in {currency})</span>}
           </CardDescription>
         </CardHeader>
         <CardContent>
