@@ -49,7 +49,16 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading 
     
     navigator.clipboard.writeText(text)
       .then(() => toast('Copied to clipboard!'))
-      .catch(() => toast('Failed to copy', { variant: 'destructive' }));
+      .catch(() => toast('Failed to copy'));
+  };
+
+  const sendReminder = (settlement: Settlement) => {
+    // Only allow the receiver to send reminders
+    if (user?.id === settlement.to.id) {
+      toast(`Reminder sent to ${settlement.from.name}`, {
+        description: `For payment of ${settlement.currency} ${settlement.amount.toFixed(2)}`
+      });
+    }
   };
 
   return (
@@ -114,8 +123,15 @@ const SettlementPlan: React.FC<SettlementPlanProps> = ({ settlements, isLoading 
                       {userIsReceiver ? 'You' : settlement.to.name}
                     </span>
                   </div>
-                  <div className="font-bold text-right">
-                    {settlement.currency} {settlement.amount.toFixed(2)}
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-right">
+                      {settlement.currency} {settlement.amount.toFixed(2)}
+                    </div>
+                    {userIsReceiver && !userIsPayer && (
+                      <Button variant="outline" size="sm" onClick={() => sendReminder(settlement)}>
+                        Send Reminder
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

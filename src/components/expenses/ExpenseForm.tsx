@@ -87,7 +87,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ expenseId }) => {
       description: '',
       amount: 0,
       currency: '',
-      paidBy: user?._id || '',
+      paidBy: user?._id || user?.id || '',
       date: new Date(),
       splitType: 'equal',
       participants: [],
@@ -156,8 +156,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ expenseId }) => {
     // Validate that custom shares match the total amount
     if (data.splitType === 'custom' && Math.abs(totalShare - data.amount) > 0.01) {
       toast('Invalid shares', {
-        description: `The sum of shares (${totalShare}) doesn't match the total amount (${data.amount})`,
-        variant: 'destructive',
+        description: `The sum of shares (${totalShare}) doesn't match the total amount (${data.amount})`
       });
       return;
     }
@@ -187,13 +186,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ expenseId }) => {
         // Update existing expense
         await expenseApi.updateExpense(expenseId, expenseData);
         toast('Expense updated', {
-          description: 'The expense has been updated successfully.',
+          description: 'The expense has been updated successfully.'
         });
       } else {
         // Create new expense
         await expenseApi.addExpense(expenseData);
         toast('Expense added', {
-          description: 'The new expense has been added successfully.',
+          description: 'The new expense has been added successfully.'
         });
       }
 
@@ -201,8 +200,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ expenseId }) => {
       navigate(`/groups/${groupId}`);
     } catch (error: any) {
       toast('Error saving expense', {
-        description: error.response?.data?.message || 'An error occurred while saving the expense.',
-        variant: 'destructive',
+        description: error.response?.data?.message || 'An error occurred while saving the expense.'
       });
     } finally {
       setIsSubmitting(false);
@@ -451,7 +449,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ expenseId }) => {
                                   onChange={(e) => {
                                     const shares = { ...form.getValues('customShares') };
                                     shares[member.user._id] = parseFloat(e.target.value) || 0;
-                                    form.setValue('customShares', shares);
+                                    form.setValue('customShares', shares, { shouldValidate: true });
                                   }}
                                   className="w-24 ml-2"
                                   placeholder="0.00"

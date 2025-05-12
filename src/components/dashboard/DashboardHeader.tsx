@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Bell, LogOut, User, Menu, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import AnimatedLogo from '../landing/AnimatedLogo';
 
 interface DashboardHeaderProps {
   title?: string;
@@ -14,6 +15,8 @@ interface DashboardHeaderProps {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title = 'Dashboard' }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   const getUserInitials = () => {
     if (!user || !user.name) return '?';
@@ -21,6 +24,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title = 'Dashboard' }
     const nameParts = user.name.split(' ');
     if (nameParts.length === 1) return nameParts[0][0].toUpperCase();
     return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+  };
+
+  const handleLogout = () => {
+    logout();
+    // Auth context now handles redirection
   };
 
   return (
@@ -36,7 +44,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title = 'Dashboard' }
             </SheetTrigger>
             <SheetContent side="left" className="w-[240px] sm:w-[300px]">
               <SheetHeader>
-                <SheetTitle>BudgetSplit</SheetTitle>
+                <SheetTitle>
+                  <AnimatedLogo />
+                </SheetTitle>
                 <SheetDescription>
                   Navigate through your expense groups
                 </SheetDescription>
@@ -59,7 +69,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title = 'Dashboard' }
           </Sheet>
           
           <Link to="/dashboard" className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold">BudgetSplit</h1>
+            <AnimatedLogo />
           </Link>
         </div>
         
@@ -110,7 +120,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title = 'Dashboard' }
                   Profile
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem onClick={logout} className="cursor-pointer">
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>

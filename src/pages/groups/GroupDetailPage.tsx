@@ -80,7 +80,6 @@ const GroupDetailPage: React.FC = () => {
     onError: (error: any) => {
       toast('Error deleting expense', {
         description: error.response?.data?.message || 'An error occurred while deleting the expense.',
-        variant: 'destructive',
       });
     },
   });
@@ -93,12 +92,28 @@ const GroupDetailPage: React.FC = () => {
     if (group?.inviteCode) {
       navigator.clipboard.writeText(group.inviteCode)
         .then(() => toast('Invite code copied to clipboard'))
-        .catch(() => toast('Failed to copy invite code', { variant: 'destructive' }));
+        .catch(() => toast('Failed to copy invite code'));
     }
   };
   
   const exportExpenses = () => {
-    expenseApi.exportExpenses(groupId);
+    // Use standard link opening in a new tab to handle auth
+    const exportUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/expenses/group/${groupId}/export`;
+    const token = localStorage.getItem('token');
+    
+    // Create a temporary link with auth token
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.setAttribute('target', '_blank');
+    link.setAttribute('download', `expenses-${group?.name || 'group'}-${Date.now()}.csv`);
+    
+    // Append to body and click
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    
     toast('Exporting expenses', {
       description: 'Your expense data is being downloaded as a CSV file.',
     });

@@ -2,9 +2,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "@/components/ui/sonner";
 import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface User {
   id: string;
+  _id?: string; // Adding this to fix type issues
   name: string;
   email: string;
   preferredCurrency: string;
@@ -31,6 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -67,14 +71,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       toast("Login successful!", {
-        description: `Welcome back, ${user.name}!`,
+        description: `Welcome back, ${user.name}!`
       });
     } catch (err: any) {
       const message = err.response?.data?.message || 'Login failed. Please try again.';
       setError(message);
       toast("Login failed", {
-        description: message,
-        variant: "destructive",
+        description: message
       });
     } finally {
       setLoading(false);
@@ -105,14 +108,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       toast("Registration successful!", {
-        description: `Welcome to BudgetSplit, ${user.name}!`,
+        description: `Welcome to BudgetSplit, ${user.name}!`
       });
     } catch (err: any) {
       const message = err.response?.data?.message || 'Registration failed. Please try again.';
       setError(message);
       toast("Registration failed", {
-        description: message,
-        variant: "destructive",
+        description: message
       });
     } finally {
       setLoading(false);
@@ -132,8 +134,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     delete axios.defaults.headers.common['Authorization'];
     
     toast("Logged out", {
-      description: "You've been successfully logged out.",
+      description: "You've been successfully logged out."
     });
+    
+    // Redirect to login page no matter which page we're on
+    navigate('/login', { replace: true });
   };
 
   const updateProfile = async (profileData: Partial<User>) => {
@@ -155,14 +160,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify({ ...user!, ...updatedUser }));
       
       toast("Profile updated", {
-        description: "Your profile has been successfully updated.",
+        description: "Your profile has been successfully updated."
       });
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to update profile. Please try again.';
       setError(message);
       toast("Update failed", {
-        description: message,
-        variant: "destructive",
+        description: message
       });
     } finally {
       setLoading(false);
