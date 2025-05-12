@@ -10,7 +10,7 @@ const features = [
   },
   {
     title: 'Split Expenses Easily',
-    description: 'Split costs equally or with custom amounts. Perfect for when someone doesn't participate in an expense.',
+    description: 'Split costs equally or with custom amounts. Perfect for when someone doesn\'t participate in an expense.',
     icon: <CreditCard className="h-10 w-10 text-primary" />,
   },
   {
